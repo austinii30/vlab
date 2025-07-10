@@ -1,0 +1,7 @@
+*.swp
+*.Rhistory
+*.RHistory
+
+# '/**/' ignores the dir., no matter where it appears
+/**/rawdata/*/ 
+/**/output/*/
