@@ -29,6 +29,8 @@ for (y in years) {
     dat <- dat[!grepl("^\\*", dat)]
     # remove '# ' from the header, and removing any leading/trailing spaces
     dat <- trimws(gsub("# ", "", dat))
+    # replace 'None' as '-9999' (explicitly for 2023-12)
+    dat <- gsub("None", "-999", dat)
 
     #PS01 測站氣壓(hPa)
     #TX01 氣溫(℃)
@@ -62,13 +64,25 @@ for (y in years) {
     # ------------------------------------------------------------
     # handle special values
     # 特殊值:
+    # 2023-01 ~ 2023-11
     # -9991:儀器故障待修              --> NA
     # -9996:資料累計於後         
     # -9997:因不明原因或故障而無資料  --> NA
     # -9998:雨跡(Trace)
     # -9999:未觀測而無資料            --> NA
+    # 2023-12
+    # -999.1:儀器故障待修                                  --> NA
+    # -9.6/-999.6:資料累計於後
+    # -9.5/-99.5/-999.5/-999.5/-9999.5:因故障而無資料      --> NA
+    # -9.7/-99.7/-999.7/-999.7/-9999.7:因不明原因而無資料  --> NA
+    # -9.8:雨跡(Trace)
+    # None:未觀測而無資料                                  --> NA
     # ------------------------------------------------------------
+    #print(dat[!complete.cases(dat), ])
     dat[dat == -9991 | dat == -9997 | dat == -9999] <- NA
+    dat[dat == -999.1] <- NA
+    dat[dat == -9.5 | dat == -99.5 | dat == -999.5 | dat == -9999.5] <- NA
+    dat[dat == -9.7 | dat == -99.7 | dat == -999.7 | dat == -9999.7] <- NA
 
     # ------------------------------------------------------------
     # export the results to 'data/preprocessed/'
@@ -79,6 +93,7 @@ for (y in years) {
     allst <- unique(c(allst, dat[, 1]))
     echo(y, " finished.")
 }
+
 warnings()
 
 
