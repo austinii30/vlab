@@ -10,121 +10,116 @@ source(file.path(this.path::this.dir(), "../../common_script/utils.R"))
 load(ppdatpath("stdat_2023.RData"))  # stdat
 
 
-# ------------------------------------------------------------
-# calculate percipitation statistics for each station
-# return: a data-frame, rows: station, cols: statistics
-# ------------------------------------------------------------
-result <- matrix(nrow=0, ncol=6)  # stno + 5 statistics
-stnos <- names(stdat)
-for (stidx in 1:nrow(stdat)) {
-    st <- stdat[[stidx]]; stno <- stnos[stidx]
-    dat <- st[, c("yyyymmddhh", "PP01")]
-    str(dat)
-
-
-    # 02, 03, 04
-
-
-
-    # 05, 06
-
-
-    # 07, 08
-
-
-    # 09, 10, 11
-
-
-
-
-
-
-
-
-
-
-
-    # daily data of each station
-    stdaydat <- ammdt(dat)
-
-    # 01
-    th <- 17
-    accutempdiff <- sum(stdaydat$avg[stdaydat$avg > th] - th)  # 01
-
-    # 02
-    thmin <- 27; thmax <- 33
-    matchdays <- stdaydat$min >= thmin & stdaydat$max <= thmax
-    totaldays <- sum(matchdays)  # 02
-
-    # 03, 04
-    mdat <- stdaydat[matchdays, ]; mdatdt <- mdat$date
-    dtdiff <- mdatdt[-1] - mdatdt[-length(mdatdt)]
-    boundary <- which(dtdiff > 1)
-    mdays <- boundary - c(0, boundary[-length(boundary)])  # 04
-    avgmdays <- mean(mdays)  # 03
-
-    # 05 (for 2023, 01/01 is Sunday)
-    wth <- 18   
-    # separate each week (each week begins at Sunday)
-    stdaydat$weekstart <- as.Date(cut(as.Date(stdaydat$datetime), breaks = "week")) -1
-
-    weekstarts <- unique(stdaydat$weekstart)
-    wat <- rep(NA, length(weeksstarts))
-    # calculate weekly average temperature
-    for (wsidx in 1:length(weekstarts)) {
-        ws <- weekstarts[wsidx]
-        wdat <- stdaydat[stdaydat$weekstart == ws, "avg"]
-        wat <- mean(wdat)
-    }
-
-    # sift matched weeks
-    mweeks <- sum(wat > wth)  # 05
-
-    # return results
-    result[stidx, ] <- c(stno, accutempdiff, totaldays, avgmdays, mdays, mweeks)
-}
-
-write.csv(result, file=outpath("temperature-2023.csv"))
-save(result, file=outpath("temperature-2023.RData"))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# average and max/min daily temperature
-ammdt <- function (dat, dtidx=1, tempidx=2) { 
+# daily percipitation
+dp <- function (dat, dtidx=1, ppidx=2) { 
     # sort the data by date
-    dat <- dat[sort(dat[, dtidx]), c(dtidx, tempidx)]
-    dt <- dat[, 1]; temp <- dat[, 2]
-    if (sum(is.na(temp)) > 0) stop("Missing value fonud!")
+    dat <- dat[order(dat[, dtidx]), c(dtidx, ppidx)]
+    dt <- dat[, 1]
+    #if (sum(is.na(pp)) > 0) stop("Missing value fonud!")
 
     daydt <- as.Date(dt)
     days <- unique(daydt)
 
-    cols <- c("date", "avg", "min", "max")
-    res <- matrix(NA, nrow=length(days), ncol=length(cols))
-    colnames(res) <- cols; rownames(res) <- days
+    cols <- c("date", "pp")
+    ppdaily <- rep(NA, length(days))
     for (didx in 1:length(days)) {
         d <- days[didx]
         ddat <- dat[daydt == d, ]
-        res[1, ] <- c(d, mean(ddat[, 2]), min(ddat[, 2]), max(ddat[, 2]))
+        ppdaily[didx] <- sum(ddat$PP01, na.rm=TRUE)
     }
 
-    return(res)
+    return(data.frame(date=days, PP01=ppdaily))
 }
 
 
+# ------------------------------------------------------------
+# calculate percipitation statistics for each station
+# return: a data-frame, rows: station, cols: statistics
+# NOTE: statistic 01 can't be calculated
+# ------------------------------------------------------------
+stnos <- names(stdat)
+result <- matrix(nrow=length(stdat), ncol=10)  # 10 statistics
+for (stidx in 1:length(stdat)) {
+    st <- stdat[[stidx]]; stno <- stnos[stidx]
+    dat <- st[, c("yyyymmddhh", "PP01")]
+    #str(dat)
+
+    # set NA for all -9996 and its subsequent value
+    temp <- c()
+    missings <- which(dat$PP01 == -9996)
+    if (length(missings) > 0) {
+        for (midx in 1:length(missings)) {
+            m <- missings[midx]
+            temp <- c(temp, m)
+            if (dat$PP01[m+1] != -9996) { dat$PP01[c(temp, m+1)] <- NA }
+            else { next }
+            temp <- c()
+        }
+    }
+
+    # minimum unit is day
+    ddat <- dp(dat)
+
+
+    # 02, 03, 04
+    th1 <- 10; th2 <- 80
+    sraindays <- sum(ddat$PP01 < th1)  # 02
+    mraindays <- sum(ddat$PP01 >= th1 & ddat$PP01 <= th2)  # 03
+    lraindays <- sum(ddat$PP01 > th2)  # 04
+
+
+    # 05
+    yearmeanpp <- mean(ddat$PP01, na.rm=TRUE)  # 05
+
+
+    # 06
+    yearmeanppif <- mean(ddat$PP01[ddat$PP01 > 0], na.rm=TRUE)  # 06
+
+
+    # 07, 08
+    jtmdat <- ddat[as.numeric(format(ddat$date, "%m")) <= 5, ]
+    res <- (jtmdat$PP01 > 0)
+    res[is.na(res)] <- 0
+    res <- rle(res)
+    periods <- res$lengths[res$values == 1]
+    if (length(periods) == 0) jtmraindays <- 0
+    else jtmraindays <- max(periods)  # 07
+
+    res <- (jtmdat$PP01 < 5)
+    res[is.na(res)] <- 0
+    res <- rle(res)
+    periods <- res$lengths[res$values == 1]
+    if (length(periods) == 0) jtmbraindays <- 0
+    else jtmbraindays <- max(periods)  # 08
+
+
+    # 09, 
+    jtndat <- dat[as.numeric(format(dat$yyyymmddhh, "%m")) >= 6, ]
+    jtndat <- jtndat[as.numeric(format(jtndat$yyyymmddhh, "%m")) <= 11, ]
+
+    jtncleandat <- jtndat[jtndat$PP01 != -9996, ]
+
+    jtntotalpp <- sum(jtncleandat$PP01, na.rm=TRUE)  # 09
+
+
+    # 10, 11
+    jtnddat <- ddat[as.numeric(format(ddat$date, "%m")) >= 6, ]
+    jtnddat <- jtnddat[as.numeric(format(jtnddat$date, "%m")) <= 11, ]
+
+    jtnraindays <- sum(jtnddat > 0, na.rm=TRUE)  # 10
+    jtnhraindays <- sum(jtnddat > 200, na.rm=TRUE)  # 11
+
+
+    # return results
+    result[stidx, ] <- c(sraindays, mraindays, lraindays,
+                         yearmeanpp, yearmeanppif, 
+                         jtmraindays, jtmbraindays,
+                         jtntotalpp, jtnraindays, jtnhraindays)
+}
+result <- as.data.frame(result)
+result$stno <- stnos
+
+write.csv(result, file=outpath("percepitation-2023.csv"))
+save(result, file=outpath("percepitation-2023.RData"))
+
+warnings()
