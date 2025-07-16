@@ -30,7 +30,7 @@ for (y in years) {
     # remove '# ' from the header, and removing any leading/trailing spaces
     dat <- trimws(gsub("# ", "", dat))
     # replace 'None' as '-9999' (explicitly for 2023-12)
-    dat <- gsub("None", "-999", dat)
+    dat <- gsub("None", "-9999", dat)
 
     #PS01 測站氣壓(hPa)
     #TX01 氣溫(℃)
@@ -72,10 +72,10 @@ for (y in years) {
     # -9999:未觀測而無資料            --> NA
     # 2023-12
     # -999.1:儀器故障待修                                  --> NA
-    # -9.6/-999.6:資料累計於後
+    # -9.6/-999.6:資料累計於後                             --> -9996
     # -9.5/-99.5/-999.5/-999.5/-9999.5:因故障而無資料      --> NA
     # -9.7/-99.7/-999.7/-999.7/-9999.7:因不明原因而無資料  --> NA
-    # -9.8:雨跡(Trace)
+    # -9.8:雨跡(Trace)                                     --> -9998
     # None:未觀測而無資料                                  --> NA
     # ------------------------------------------------------------
     #print(dat[!complete.cases(dat), ])
@@ -83,6 +83,8 @@ for (y in years) {
     dat[dat == -999.1] <- NA
     dat[dat == -9.5 | dat == -99.5 | dat == -999.5 | dat == -9999.5] <- NA
     dat[dat == -9.7 | dat == -99.7 | dat == -999.7 | dat == -9999.7] <- NA
+    dat[dat == -9.6 | dat == -999.6] <- -9996
+    dat[dat == -9.8] <- -9998
 
     # ------------------------------------------------------------
     # export the results to 'data/preprocessed/'
