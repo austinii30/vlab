@@ -129,3 +129,5 @@ for (st in allst) {
 # ------------------------------------------------------------
 save(stdat, file=ppdatpath("stdat_2023.RData"))
 save(rmdat, file=ppdatpath("rmdat_2023-12.RData"))
+write.csv(stdat, file=ppdatpath("stdat_2023.csv"))
+write.csv(rmdat, file=ppdatpath("rmdat_2023-12.csv"))
