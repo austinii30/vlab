@@ -88,7 +88,7 @@ for (y in years) {
     # export the results to 'data/preprocessed/'
     # ------------------------------------------------------------
     save(dat, file=ppdatpath(paste0(y, "-pp.RData")))
-    str(dat)
+    #str(dat)
     alldat[[y]] <- dat
     allst <- unique(c(allst, dat[, 1]))
     echo(y, " finished.")
@@ -118,14 +118,14 @@ for (st in allst) {
     # for each station, sort by date
     stdat[[st]] <- stdat[[st]][order(stdat[[st]][, 2]), ]
     rownames(stdat[[st]]) <- 1:nrow(stdat[[st]])
-    print(head(stdat[[st]]))
+    #print(head(stdat[[st]]))
 }
 
 
 # ------------------------------------------------------------
-# save preprocessed data
+# save preprocessed data (as .RData / .csv)
 # ------------------------------------------------------------
 save(stdat, file=ppdatpath("stdat_2023.RData"))
 save(rmdat, file=ppdatpath("rmdat_2023-12.RData"))
-write.csv(stdat, file=ppdatpath("stdat_2023.csv"))
-write.csv(rmdat, file=ppdatpath("rmdat_2023-12.csv"))
+
+write.csv(do.call(rbind, stdat), ppdatpath("stdat_2023.csv"))
