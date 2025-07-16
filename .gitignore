@@ -4,3 +4,5 @@
 
 # '/**/' ignores the dir., no matter where it appears
 /**/data/raw/*
+/**/largefiles/*
+
