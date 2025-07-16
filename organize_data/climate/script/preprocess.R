@@ -85,6 +85,27 @@ for (y in years) {
     dat[dat == -9.7 | dat == -99.7 | dat == -999.7 | dat == -9999.7] <- NA
     dat[dat == -9.6 | dat == -999.6] <- -9996
     dat[dat == -9.8] <- -9998
+    # !! the following values are not included in the documents !!!!
+    #    -9999.1, -9995.0, -99.6, -99.1
+    #values <- c(-9999.1, -9995, -99.6, -99.1)
+    #> for (v in values) {
+    #+ print(v)
+    #+ for (i in 1:ncol(ndat)) {
+    #+ coldat <- ndat[, i]
+    #+ if (v %in% coldat) print(colnames(ndat)[i])
+    #+ }}
+    #[1] -9999.1
+    #[1] "PS01"  PS01 測站氣壓(hPa) 
+    #[1] -9995
+    #[1] "RH01"  RH01 相對溼度(%)
+    #[1] -99.6
+    #[1] "TX01"  TX01 氣溫(℃)
+    #[1] -99.1
+    #[1] "TX01"  TX01 氣溫(℃)
+    #[1] "WD01"  WD01 平均風風速(m/s)
+    # assign all these values with NA since they are unreasonable
+    dat[dat == -99.1 | dat == -9999.1 | dat == -9995 | dat == -99.6] <- NA
+
 
     # ------------------------------------------------------------
     # export the results to 'data/preprocessed/'
@@ -116,11 +137,40 @@ rmdat <- talldat[[years[12]]][, !(colnames(talldat[[years[12]]]) %in% cols)]
 # ------------------------------------------------------------
 stdat <- vector("list", length=length(allst)); names(stdat) <- allst
 for (st in allst) { 
-    stdat[[st]] <- yearlydat[yearlydat[, 1] == st, ] 
+    #stdat[[st]] <- yearlydat[yearlydat[, 1] == st, ] 
+    dat <- yearlydat[yearlydat[, 1] == st, ] 
     # for each station, sort by date
-    stdat[[st]] <- stdat[[st]][order(stdat[[st]][, 2]), ]
-    rownames(stdat[[st]]) <- 1:nrow(stdat[[st]])
+    #stdat[[st]] <- stdat[[st]][order(stdat[[st]][, 2]), ]
+    dat <- dat[order(dat[, 2]), ]
+    rownames(dat) <- 1:nrow(dat)
     #print(head(stdat[[st]]))
+
+    # ------------------------------------------------------------
+    # deal with -9996
+    # 01: if -9996 is the last value of the station, replace all previous -9996 as NA
+    # 02: if -9996 is followed with 0/NA, replace all previous -9996 as 0/NA
+    # 03: if the next value is also -9996, skip the current one
+    # 04: if none of the above cases match, leave the value as -9996
+    # ------------------------------------------------------------
+    temp <- c()
+    missings <- which(dat$PP01 == -9996)
+    if (length(missings) > 0) { 
+        for (midx in 1:length(missings)) {
+            m <- missings[midx]
+            temp <- c(temp, m)
+            # 01
+            if (m == nrow(dat)) { dat$PP01[temp] <- NA } 
+            # 02 (check NA first to avoid errors)
+            else if (is.na(dat$PP01[m+1])) { dat$PP01[temp] <- NA } 
+            else if (dat$PP01[m+1] == 0) { dat$PP01[temp] <- 0 } 
+            # 03
+            else if (dat$PP01[m+1] == -9996) { next } 
+            # 04
+            temp <- c()
+        }
+    }
+
+    stdat[[st]] <- dat
 }
 
 
@@ -130,4 +180,4 @@ for (st in allst) {
 save(stdat, file=ppdatpath("stdat_2023.RData"))
 save(rmdat, file=ppdatpath("rmdat_2023-12.RData"))
 
-write.csv(do.call(rbind, stdat), ppdatpath("stdat_2023.csv"))
+write.csv(do.call(rbind, stdat), lpdatpath("stdat_2023.csv"))

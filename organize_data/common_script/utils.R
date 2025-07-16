@@ -16,6 +16,10 @@ ppdatpath <- function (file) {
     return(file.path(this.dir(), "../data/preprocessed", file))
 }
 
+lpdatpath <- function (file) {
+    return(file.path(this.dir(), "../data/preprocessed/largefiles", file))
+}
+
 rlibs   <- function (file) {
     return(file.path(this.dir(), file))
 }
