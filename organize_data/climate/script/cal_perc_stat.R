@@ -14,13 +14,10 @@ load(ppdatpath("stdat_2023.RData"))  # stdat
 dp <- function (dat, dtidx=1, ppidx=2) { 
     # sort the data by date
     dat <- dat[order(dat[, dtidx]), c(dtidx, ppidx)]
-    dt <- dat[, 1]
-    #if (sum(is.na(pp)) > 0) stop("Missing value fonud!")
 
-    daydt <- as.Date(dt)
+    daydt <- as.Date(dat[, 1])
     days <- unique(daydt)
 
-    cols <- c("date", "pp")
     ppdaily <- rep(NA, length(days))
     for (didx in 1:length(days)) {
         d <- days[didx]
@@ -37,12 +34,10 @@ dp <- function (dat, dtidx=1, ppidx=2) {
 # return: a data-frame, rows: station, cols: statistics
 # NOTE: statistic 01 can't be calculated
 # ------------------------------------------------------------
-stnos <- names(stdat)
 result <- matrix(nrow=length(stdat), ncol=10)  # 10 statistics
 for (stidx in 1:length(stdat)) {
-    st <- stdat[[stidx]]; stno <- stnos[stidx]
+    st <- stdat[[stidx]]
     dat <- st[, c("yyyymmddhh", "PP01")]
-    #str(dat)
 
     # set NA for all -9996 and its subsequent value
     temp <- c()
@@ -57,9 +52,8 @@ for (stidx in 1:length(stdat)) {
         }
     }
 
-    # minimum unit is day
+    # minimum unit is day for 'ddat'
     ddat <- dp(dat)
-
 
     # 02, 03, 04
     th1 <- 10; th2 <- 80
@@ -79,14 +73,14 @@ for (stidx in 1:length(stdat)) {
     # 07, 08
     jtmdat <- ddat[as.numeric(format(ddat$date, "%m")) <= 5, ]
     res <- (jtmdat$PP01 > 0)
-    res[is.na(res)] <- 0
+    res[is.na(res)] <- 0  # all NA eliminated
     res <- rle(res)
     periods <- res$lengths[res$values == 1]
     if (length(periods) == 0) jtmraindays <- 0
     else jtmraindays <- max(periods)  # 07
 
     res <- (jtmdat$PP01 < 5)
-    res[is.na(res)] <- 0
+    res[is.na(res)] <- 0  # all NA eliminated
     res <- rle(res)
     periods <- res$lengths[res$values == 1]
     if (length(periods) == 0) jtmbraindays <- 0
@@ -96,7 +90,7 @@ for (stidx in 1:length(stdat)) {
     # 09, 
     jtndat <- dat[as.numeric(format(dat$yyyymmddhh, "%m")) >= 6, ]
     jtndat <- jtndat[as.numeric(format(jtndat$yyyymmddhh, "%m")) <= 11, ]
-
+    # ignore values -9996
     jtncleandat <- jtndat[jtndat$PP01 != -9996, ]
 
     jtntotalpp <- sum(jtncleandat$PP01, na.rm=TRUE)  # 09
@@ -106,8 +100,8 @@ for (stidx in 1:length(stdat)) {
     jtnddat <- ddat[as.numeric(format(ddat$date, "%m")) >= 6, ]
     jtnddat <- jtnddat[as.numeric(format(jtnddat$date, "%m")) <= 11, ]
 
-    jtnraindays <- sum(jtnddat > 0, na.rm=TRUE)  # 10
-    jtnhraindays <- sum(jtnddat > 200, na.rm=TRUE)  # 11
+    jtnraindays <- sum(jtnddat$PP01 > 0, na.rm=TRUE)  # 10
+    jtnhraindays <- sum(jtnddat$PP01 > 200, na.rm=TRUE)  # 11
 
 
     # return results
@@ -117,7 +111,8 @@ for (stidx in 1:length(stdat)) {
                          jtntotalpp, jtnraindays, jtnhraindays)
 }
 result <- as.data.frame(result)
-result$stno <- stnos
+result$stno <- names(stdat)
+result <- result[, c(11, 1:10)]
 
 write.csv(result, file=outpath("percepitation-2023.csv"))
 save(result, file=outpath("percepitation-2023.RData"))

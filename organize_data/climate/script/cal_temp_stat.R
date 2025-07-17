@@ -14,23 +14,22 @@ load(ppdatpath("stdat_2023.RData"))  # stdat
 ammdt <- function (dat, dtidx=1, tempidx=2) { 
     # sort the data by date
     dat <- dat[order(dat[, dtidx]), c(dtidx, tempidx)]
-    dt <- dat[, 1]; temp <- dat[, 2]
-    #if (sum(is.na(temp)) > 0) stop("Missing value fonud!")
-    #str(dat)
 
-    daydt <- as.Date(dt)
+    daydt <- as.Date(dat[, 1])
     days <- unique(daydt)
 
     cols <- c("avg", "min", "max")
     res <- matrix(NA, nrow=length(days), ncol=length(cols))
-    colnames(res) <- cols; rownames(res) <- days
     for (didx in 1:length(days)) {
         d <- days[didx]
         ddat <- dat[daydt == d, ]
         ddat <- ddat[complete.cases(ddat), ]
-        meanres <- ifelse(nrow(ddat) > 0, mean(ddat[, 2]), NA)
-        minres <- ifelse(nrow(ddat) > 0, min(ddat[, 2]), NA)
-        maxres <- ifelse(nrow(ddat) > 0, max(ddat[, 2]), NA)
+        meanres <- minres <- maxres <- NA
+        if (nrow(ddat) > 0) {
+            meanres <- mean(ddat[, 2])
+            minres <- min(ddat[, 2]) 
+            maxres <- max(ddat[, 2])
+        }
         res[didx, ] <- c(meanres, minres, maxres)
     }
 
@@ -46,12 +45,10 @@ ammdt <- function (dat, dtidx=1, tempidx=2) {
 # calculate temperature statistics for each station
 # return: a data-frame, rows: station, cols: statistics
 # ------------------------------------------------------------
-stnos <- names(stdat)
 result <- matrix(NA, nrow=length(stdat), ncol=5)  # 5 statistics
 for (stidx in 1:length(stdat)) {
-    st <- stdat[[stidx]]; stno <- stnos[stidx]
+    st <- stdat[[stidx]]
     dat <- st[, c("yyyymmddhh", "TX01")]
-    #str(dat)
 
     # daily data of each station
     stdaydat <- ammdt(dat)
@@ -66,10 +63,17 @@ for (stidx in 1:length(stdat)) {
     totaldays <- sum(matchdays)  # 02
 
     # 03, 04
+###########################
     mdat <- stdaydat[matchdays, ]; mdatdt <- mdat$date
     dtdiff <- mdatdt[-1] - mdatdt[-length(mdatdt)]
     boundary <- which(dtdiff > 1)
     mdays <- boundary - c(0, boundary[-length(boundary)])  
+    #if (length(boundary) > 0 | !isTRUE(is.na(boundary))) {
+    #    mdays <- boundary - c(0, boundary[-length(boundary)])  
+    #    maxmdays <- max(mdays)
+    #} else {
+    #    maxmdays <- NA
+    #}
     if (isTRUE(is.na(mdays)) | length(mdays) == 0) maxmdays <- NA
     else maxmdays <- max(mdays)  # 04
     avgmdays <- mean(mdays)  # 03
@@ -77,6 +81,8 @@ for (stidx in 1:length(stdat)) {
     # 05 (for 2023, 01/01 is Sunday)
     wth <- 18   
     # separate each week (each week begins at Sunday)
+    # the final week contains only one day (12/31)
+    # by default, cut() recognizes Monday as the start of a week
     stdaydat$weekstart <- as.Date(cut(as.Date(stdaydat$date), breaks="week")) - 1
 
     weekstarts <- unique(stdaydat$weekstart)
@@ -95,7 +101,8 @@ for (stidx in 1:length(stdat)) {
     result[stidx, ] <- c(accutempdiff, totaldays, avgmdays, maxmdays, mweeks)
 }
 result <- data.frame(result)
-result$stno <- stnos
+result$stno <- names(stdat)
+result <- result[, c(6, 1:5)]
 
 write.csv(result, file=outpath("temperature-2023.csv"))
 save(result, file=outpath("temperature-2023.RData"))
