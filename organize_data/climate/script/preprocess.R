@@ -10,11 +10,24 @@ source(file.path(this.path::this.dir(), "../../common_script/utils.R"))
 #filename <- sprintf("2023%02d99.auto_hr.txt", 1:12)
 years <- sprintf("2023%02d", 1:12)
 
+generate_hourly_POSIXct <- function(year) {
+  # Create start and end datetime
+  start_time <- as.POSIXct(paste0(year, "-01-01 00:00:00"), tz = "UTC")
+  end_time   <- as.POSIXct(paste0(year + 1, "-01-01 00:00:00"), tz = "UTC") - 3600
+
+  # Generate hourly sequence
+  times <- seq(from = start_time, to = end_time, by = "hour")
+
+  return(times)
+}
+
+hours2023 <- generate_hourly_POSIXct(2023)
+
 # data for each month
 alldat <- vector("list", length=12); names(alldat) <- years
 allst <- c()  # all stations
 
-# preprocess data for each year separately, and combine for each station later
+# preprocess data for each month separately, and combine for each station later
 for (y in years) {
     # ------------------------------------------------------------
     # prepeocess data into the correct format
@@ -60,6 +73,10 @@ for (y in years) {
 
     dat <- df_raw
 
+    # for 2023-12, each day begins at 00:00
+    # subtract each time by 1 hour for 2023-01 ~ 2023-11 to match that of 2023-12
+    if (y != "202312") { dat$yyyymmddhh <- dat$yyyymmddhh - 3600 }
+    
 
     # ------------------------------------------------------------
     # handle special values
@@ -134,16 +151,26 @@ rmdat <- talldat[[years[12]]][, !(colnames(talldat[[years[12]]]) %in% cols)]
 
 # ------------------------------------------------------------
 # separate each station
+# * make sure each station contains data for each hour in 2023 
 # ------------------------------------------------------------
 stdat <- vector("list", length=length(allst)); names(stdat) <- allst
 for (st in allst) { 
-    #stdat[[st]] <- yearlydat[yearlydat[, 1] == st, ] 
+    # separate data for each station, fill in every hour, and sort by date
     dat <- yearlydat[yearlydat[, 1] == st, ] 
+
+    new_hours <- hours2023[!(hours2023 %in% dat$yyyymmddhh)]
+    new_len <- length(new_hours)
+    
+    # automatically fill NA for other columns
+    new_rows <- as.data.frame( lapply(dat, function(col) NA) )
+    new_rows <- new_rows[rep(1, new_len), ]
+    new_rows$yyyymmddhh <- new_hours
+    
+    dat <- rbind(dat, new_rows)
+
     # for each station, sort by date
-    #stdat[[st]] <- stdat[[st]][order(stdat[[st]][, 2]), ]
     dat <- dat[order(dat[, 2]), ]
     rownames(dat) <- 1:nrow(dat)
-    #print(head(stdat[[st]]))
 
     # ------------------------------------------------------------
     # deal with -9996
