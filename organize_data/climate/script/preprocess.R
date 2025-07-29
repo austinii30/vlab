@@ -159,6 +159,7 @@ for (st in allst) {
     dat <- yearlydat[yearlydat[, 1] == st, ] 
 
     new_hours <- hours2023[!(hours2023 %in% dat$yyyymmddhh)]
+    print(new_hours)
     new_len <- length(new_hours)
     
     # automatically fill NA for other columns
