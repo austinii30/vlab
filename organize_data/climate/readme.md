@@ -1,4 +1,4 @@
-# Handling Raw Climate Data
+# Climate Data
 #### 2025/07/29 Liu, Chih Tse
 
 ### Project Structure
@@ -14,7 +14,7 @@
 
 ### Preprocessing Steps
 1. Preprocess for Linux OS 
-    - Convert the original data from ```BIG-5``` encoding to ```UTF-8``` encoding
+    - convert the original data from ```BIG-5``` encoding to ```UTF-8``` encoding
 1. Extract data from the ```.txt``` file and convert it to a R data-frame
     - import data by each line
     - replace any number of spaces with single space
@@ -52,7 +52,7 @@
     - save preprocessed data at ```./data/preprocessed/```
 
     
-### Calculating Statistics
+### Climate Statistics
 Statistics in the following figure are calculated. Note that "布氏指數" is unavailable since the amount of "positive containers" are unavailable. 
 <div style="text-align: center;">
 <img src="./reference/climate_statistics.jpg" alt="" style="width:794; height:836;">
