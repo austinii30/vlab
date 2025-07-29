@@ -55,5 +55,5 @@
 ### Calculating Statistics
 Statistics in the following figure are calculated. Note that "布氏指數" is unavailable since the amount of "positive containers" are unavailable. 
 <div style="text-align: center;">
-<img src="./reference/climate_statistics.jpg" alt="" style="width:500px; height:700px;">
+<img src="./reference/climate_statistics.jpg" alt="" style="width:794; height:836;">
 </div>
