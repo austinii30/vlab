@@ -15,13 +15,18 @@ dp <- function (dat, dtidx=1, ppidx=2) {
     # sort the data by date
     dat <- dat[order(dat[, dtidx]), c(dtidx, ppidx)]
 
-    daydt <- as.Date(dat[, 1])
+    daydt <- as.Date(dat[, dtidx])
     days <- unique(daydt)
 
     ppdaily <- rep(NA, length(days))
     for (didx in 1:length(days)) {
         d <- days[didx]
         ddat <- dat[daydt == d, ]
+
+        
+
+
+
         ppdaily[didx] <- sum(ddat$PP01, na.rm=TRUE)
     }
 
@@ -39,18 +44,18 @@ for (stidx in 1:length(stdat)) {
     st <- stdat[[stidx]]
     dat <- st[, c("yyyymmddhh", "PP01")]
 
-    # set NA for all -9996 and its subsequent value
-    temp <- c()
-    missings <- which(dat$PP01 == -9996)
-    if (length(missings) > 0) {
-        for (midx in 1:length(missings)) {
-            m <- missings[midx]
-            temp <- c(temp, m)
-            if (dat$PP01[m+1] != -9996) { dat$PP01[c(temp, m+1)] <- NA }
-            else { next }
-            temp <- c()
-        }
-    }
+#    # set NA for all -9996 and its subsequent value
+#    temp <- c()
+#    missings <- which(dat$PP01 == -9996)
+#    if (length(missings) > 0) {
+#        for (midx in 1:length(missings)) {
+#            m <- missings[midx]
+#            temp <- c(temp, m)
+#            if (dat$PP01[m+1] != -9996) { dat$PP01[c(temp, m+1)] <- NA }
+#            else { next }
+#            temp <- c()
+#        }
+#    }
 
     # minimum unit is day for 'ddat'
     ddat <- dp(dat)
