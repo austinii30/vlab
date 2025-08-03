@@ -53,7 +53,17 @@
 
     
 ### Climate Statistics
+
 Statistics in the following figure are calculated. Note that "布氏指數" is unavailable since the amount of "positive containers" are unavailable. 
 <div style="text-align: center;">
 <img src="./reference/climate_statistics.jpg" alt="" style="width:794; height:836;">
 </div>
+
+#### Temperature
+Statistics are calculated according to their definitions.
+
+#### Percipitation
+For each day, special value ```-9996```s are handled as follows:
+    - if the last hour of the previous day is ```-9996```, consecutive ```-9996```s and the value followed are all marked as ```NA```
+    - if the last hour of the current day is ```-9996```, it and its previous consecutive ```-9996```s are all marked as ```NA```
+    - the remaining ```-9996``` are all set to 0 (they do not matter)

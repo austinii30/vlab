@@ -26,9 +26,9 @@ ammdt <- function (dat, dtidx=1, tempidx=2) {
         ddat <- ddat[complete.cases(ddat), ]
         meanres <- minres <- maxres <- NA
         if (nrow(ddat) > 0) {
-            meanres <- mean(ddat[, 2])
-            minres <- min(ddat[, 2]) 
-            maxres <- max(ddat[, 2])
+            meanres <- mean(ddat[, 2], na.rm=TRUE)
+            minres <- min(ddat[, 2], na.rm=TRUE) 
+            maxres <- max(ddat[, 2], na.rm=TRUE)
         }
         res[didx, ] <- c(meanres, minres, maxres)
     }
@@ -55,12 +55,12 @@ for (stidx in 1:length(stdat)) {
 
     # 01
     th <- 17
-    accutempdiff <- sum(stdaydat$avg[stdaydat$avg > th] - th)  # 01
+    accutempdiff <- sum(stdaydat$avg[stdaydat$avg > th] - th, na.rm=TRUE)  # 01
 
     # 02
     thmin <- 27; thmax <- 33
-    matchdays <- stdaydat$min >= thmin & stdaydat$max <= thmax
-    totaldays <- sum(matchdays)  # 02
+    matchdays <- (stdaydat$min >= thmin & stdaydat$max <= thmax)
+    totaldays <- sum(matchdays, na.rm=TRUE)  # 02
 
     # 03, 04
 ###########################
@@ -75,8 +75,8 @@ for (stidx in 1:length(stdat)) {
     #    maxmdays <- NA
     #}
     if (isTRUE(is.na(mdays)) | length(mdays) == 0) maxmdays <- NA
-    else maxmdays <- max(mdays)  # 04
-    avgmdays <- mean(mdays)  # 03
+    else maxmdays <- max(mdays, na.rm=TRUE)  # 04
+    avgmdays <- mean(mdays, na.rm=TRUE)  # 03
 
     # 05 (for 2023, 01/01 is Sunday)
     wth <- 18   
@@ -91,11 +91,11 @@ for (stidx in 1:length(stdat)) {
     for (wsidx in 1:length(weekstarts)) {
         ws <- weekstarts[wsidx]
         wdat <- stdaydat[stdaydat$weekstart == ws, "avg"]
-        wat[wsidx] <- mean(wdat)
+        wat[wsidx] <- mean(wdat, na.rm=TRUE)
     }
 
     # sift matched weeks
-    mweeks <- sum(wat > wth)  # 05
+    mweeks <- sum(wat > wth, na.rm=TRUE)  # 05
 
     # return results
     result[stidx, ] <- c(accutempdiff, totaldays, avgmdays, maxmdays, mweeks)

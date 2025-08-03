@@ -10,7 +10,7 @@ source(file.path(this.path::this.dir(), "../../common_script/utils.R"))
 load(ppdatpath("stdat_2023.RData"))  # stdat
 
 
-# daily percipitation
+# calculate daily percipitation
 dp <- function (dat, dtidx=1, ppidx=2) { 
     # sort the data by date
     dat <- dat[order(dat[, dtidx]), c(dtidx, ppidx)]
@@ -18,14 +18,50 @@ dp <- function (dat, dtidx=1, ppidx=2) {
     daydt <- as.Date(dat[, dtidx])
     days <- unique(daydt)
 
+    spvalsub <- NA 
     ppdaily <- rep(NA, length(days))
     for (didx in 1:length(days)) {
+
+        pddat <- NULL  # last PP01 of the previous day
+        if (didx != 1) {
+            pd <- days[didx-1]
+            pddat <- dat[daydt == pd, ]
+            pddat <- pddat$PP01[nrow(pddat)]
+        }
+
         d <- days[didx]
-        ddat <- dat[daydt == d, ]
+        ddat <- dat[daydt == d, ]  # df of the current day
 
-        
+        # if the last PP01 of the previous day is -9996, the consecutive -9996s of the 
+        # current day and the subsequent value are all marked as NA
+        if (!is.null(pddat)) {
+            if (!is.na(pddat)) {
+                if (pddat == -9996) {
+                    i <- 1
+                    while (!is.null(ddat$PP01[i])){
+                        if (is.na(ddat$PP01[i])) { break }
+                        if (ddat$PP01[i] == -9996) { ddat$PP01[i] <- spvalsub } 
+                        else { ddat$PP01[i] <- spvalsub; break }
+                        i <- i + 1
+                    }
+                }
+            }
+        }
 
+        # if the last PP01 of the current day is -9996, it and its previous consecutive -9996s are all 
+        # marked as NA
+        if (!is.na(ddat$PP01[nrow(ddat)])) {
+           rec <- c()
+           for (hidx in nrow(ddat):1) {
+               if (is.na(ddat$PP01[hidx])) { break }
+               if (!ddat$PP01[hidx] == -9996) { break } 
+               rec <- c(rec, hidx)
+           }
+           ddat$PP01[rec] <- spvalsub
+        }
 
+        # the remaining -9996s of the day does not matter
+        ddat$PP01[ddat$PP01 == -9996] <- 0
 
         ppdaily[didx] <- sum(ddat$PP01, na.rm=TRUE)
     }
