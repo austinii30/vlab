@@ -7,7 +7,7 @@
 ├── reference         
 ├── data               
 │   ├── preprocessed  -- preprocessed data
-│   └── raw           -- raw data
+│   └── raw           -- raw data (download from https://drive.google.com/drive/folders/15D-1ed6UEHWD_oQKyU8_VbnNnd64zilK?usp=sharing)
 ├── output            -- calculated statistics
 └── script            -- all R codes
 ```
